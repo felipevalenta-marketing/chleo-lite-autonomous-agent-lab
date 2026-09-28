@@ -1,10 +1,2 @@
-streamlit
-langchain
-langgraph
-langchain-openai
-langchain-chroma
-chromadb
-openai
-python-dotenv
 pydantic
-pytest
+python-dotenv
