@@ -59,6 +59,19 @@ def _classification_for_total(total: int) -> Literal["hot", "warm", "cold"]:
     return "cold"
 
 
+WorkflowStatus = Literal[
+    "new",
+    "awaiting_information",
+    "awaiting_human_review",
+    "approved_for_follow_up",
+    "closed_no_contact",
+    "rejected",
+    "error",
+]
+
+HumanDecision = Literal["approve", "edit", "reject"]
+
+
 class Property(BaseModel):
     """Fictional property listing used for retrieval and scoring."""
 
@@ -183,6 +196,68 @@ class RetrievalResult(BaseModel):
     @classmethod
     def _validate_warnings(cls, value: list[str]) -> list[str]:
         return [_trimmed_string(item) for item in value]
+
+
+class WorkflowState(BaseModel):
+    """Validated state for the offline lead-qualification workflow."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    lead: LeadRequirements
+    missing_fields: list[str] = Field(default_factory=list)
+    follow_up_question: str | None = None
+    property_matches: list[PropertyMatch] = Field(default_factory=list)
+    score_breakdown: ScoreBreakdown | None = None
+    recommendation: str | None = None
+    confidence: float | None = None
+    human_decision: HumanDecision | None = None
+    status: WorkflowStatus = "new"
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+    step_history: list[str] = Field(default_factory=list)
+
+    @field_validator("missing_fields", "warnings", "errors", "step_history", mode="before")
+    @classmethod
+    def _normalize_text_lists(cls, value: object) -> list[str]:
+        return _normalize_string_list(value)
+
+    @field_validator("missing_fields", "warnings", "errors", "step_history")
+    @classmethod
+    def _validate_text_lists(cls, value: list[str]) -> list[str]:
+        return [_trimmed_string(item) for item in value]
+
+    @field_validator("follow_up_question", "recommendation")
+    @classmethod
+    def _validate_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _trimmed_string(value)
+
+    @field_validator("confidence")
+    @classmethod
+    def _validate_confidence(cls, value: float | None) -> float | None:
+        if value is None:
+            return None
+        if not 0 <= value <= 1:
+            raise ValueError("confidence must be between 0 and 1.")
+        return value
+
+    @field_validator("status")
+    @classmethod
+    def _validate_status(cls, value: str) -> WorkflowStatus:
+        allowed = {
+            "new",
+            "awaiting_information",
+            "awaiting_human_review",
+            "approved_for_follow_up",
+            "closed_no_contact",
+            "rejected",
+            "error",
+        }
+        normalized = _trimmed_string(value)
+        if normalized not in allowed:
+            raise ValueError(f"status must be one of {sorted(allowed)}.")
+        return normalized  # type: ignore[return-value]
 
 
 class LeadRequirements(BaseModel):
