@@ -1,3 +1,9 @@
-"""Tests for the future fictional property retrieval pipeline."""
+from __future__ import annotations
 
-# TODO: Verify ingestion and retrieval behavior later.
+import unittest
+
+
+@unittest.skip("RAG tests are deferred until the retrieval implementation phase.")
+class TestRagPlaceholder(unittest.TestCase):
+    def test_placeholder(self) -> None:
+        self.fail("This placeholder test should remain skipped.")
