@@ -114,6 +114,77 @@ class Property(BaseModel):
         return normalized
 
 
+class PropertyMatch(BaseModel):
+    """Deterministic retrieval match for a fictional property."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    property: Property
+    relevance_score: float
+    matched_terms: list[str] = Field(default_factory=list)
+    match_reasons: list[str] = Field(default_factory=list)
+    source_id: str
+
+    @field_validator("relevance_score")
+    @classmethod
+    def _validate_relevance_score(cls, value: float) -> float:
+        if not 0 <= value <= 1:
+            raise ValueError("relevance_score must be between 0 and 1.")
+        return value
+
+    @field_validator("matched_terms", "match_reasons", mode="before")
+    @classmethod
+    def _normalize_text_lists(cls, value: object) -> list[str]:
+        return _normalize_string_list(value)
+
+    @field_validator("matched_terms", "match_reasons")
+    @classmethod
+    def _validate_text_lists(cls, value: list[str]) -> list[str]:
+        return [_trimmed_string(item) for item in value]
+
+    @model_validator(mode="after")
+    def _validate_source_id(self) -> "PropertyMatch":
+        if self.source_id.strip() != self.property.property_id:
+            raise ValueError("source_id must match the property_id.")
+        return self
+
+
+class RetrievalResult(BaseModel):
+    """Offline retrieval response for the local property retrieval backend."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    query: str
+    matches: list[PropertyMatch] = Field(default_factory=list)
+    filtered_out_count: int
+    total_catalogue_size: int
+    warnings: list[str] = Field(default_factory=list)
+
+    @field_validator("query")
+    @classmethod
+    def _validate_query(cls, value: str) -> str:
+        return _trimmed_string(value)
+
+    @field_validator("filtered_out_count", "total_catalogue_size")
+    @classmethod
+    def _validate_counts(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("Counts cannot be negative.")
+        return value
+
+    @field_validator("warnings", mode="before")
+    @classmethod
+    def _normalize_warnings(cls, value: object) -> list[str]:
+        if value is None:
+            return []
+        return _normalize_string_list(value)
+
+    @field_validator("warnings")
+    @classmethod
+    def _validate_warnings(cls, value: list[str]) -> list[str]:
+        return [_trimmed_string(item) for item in value]
+
+
 class LeadRequirements(BaseModel):
     """Fictional lead inquiry and extracted requirements."""
 

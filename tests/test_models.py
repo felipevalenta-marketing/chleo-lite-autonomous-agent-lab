@@ -11,7 +11,7 @@ if str(SRC_PATH) not in sys.path:
 
 from pydantic import ValidationError
 
-from chleo.models import LeadRequirements, Property, ScoreBreakdown
+from chleo.models import LeadRequirements, Property, PropertyMatch, RetrievalResult, ScoreBreakdown
 
 
 def _load_sample_properties() -> list[dict[str, object]]:
@@ -83,3 +83,43 @@ class TestModels(unittest.TestCase):
             }
         )
         self.assertEqual(breakdown.total, 100)
+
+    def test_property_match_validation(self) -> None:
+        property_ = Property.model_validate(_load_sample_properties()[0])
+        match = PropertyMatch(
+            property=property_,
+            relevance_score=0.5,
+            matched_terms=["palma"],
+            match_reasons=["Matches preferred location: Palma de Mallorca"],
+            source_id="MAL-001",
+        )
+        self.assertEqual(match.source_id, "MAL-001")
+
+    def test_property_match_rejects_source_mismatch(self) -> None:
+        property_ = Property.model_validate(_load_sample_properties()[0])
+        with self.assertRaises(ValidationError):
+            PropertyMatch(
+                property=property_,
+                relevance_score=0.5,
+                matched_terms=["palma"],
+                match_reasons=["Matches preferred location: Palma de Mallorca"],
+                source_id="MAL-999",
+            )
+
+    def test_retrieval_result_validation(self) -> None:
+        property_ = Property.model_validate(_load_sample_properties()[0])
+        match = PropertyMatch(
+            property=property_,
+            relevance_score=0.5,
+            matched_terms=["palma"],
+            match_reasons=["Matches preferred location: Palma de Mallorca"],
+            source_id="MAL-001",
+        )
+        result = RetrievalResult(
+            query="I want an apartment in Palma.",
+            matches=[match],
+            filtered_out_count=1,
+            total_catalogue_size=3,
+            warnings=[],
+        )
+        self.assertEqual(result.filtered_out_count, 1)
