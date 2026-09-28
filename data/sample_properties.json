@@ -1,0 +1,35 @@
+[
+  {
+    "property_id": "MAL-001",
+    "title": "Sunlit Terrace Apartment",
+    "location": "Palma de Mallorca",
+    "property_type": "apartment",
+    "price_eur": 420000,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "features": ["terrace", "sea_view", "central_location"],
+    "status": "available"
+  },
+  {
+    "property_id": "MAL-002",
+    "title": "Hilltop Family Villa",
+    "location": "Santa Ponsa",
+    "property_type": "villa",
+    "price_eur": 980000,
+    "bedrooms": 4,
+    "bathrooms": 3,
+    "features": ["pool", "garden", "garage"],
+    "status": "available"
+  },
+  {
+    "property_id": "MAL-003",
+    "title": "Coastal Studio Retreat",
+    "location": "Port de Sóller",
+    "property_type": "studio",
+    "price_eur": 295000,
+    "bedrooms": 1,
+    "bathrooms": 1,
+    "features": ["balcony", "mountain_view", "walk_to_beach"],
+    "status": "under_offer"
+  }
+]
